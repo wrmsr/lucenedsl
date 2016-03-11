@@ -2,7 +2,12 @@ package com.wrmsr;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.PrivateModule;
+import com.google.inject.TypeLiteral;
+import com.google.inject.name.Names;
 import com.wrmsr.search.dsl.AppModule;
 import com.wrmsr.search.dsl.SearchService;
 import com.wrmsr.search.dsl.query.node.BooleanQueryNode;
@@ -15,6 +20,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class AppTest
         extends TestCase
@@ -70,5 +76,52 @@ public class AppTest
         for (SearchService.Hit hit : hits) {
             System.out.println(hit);
         }
+    }
+
+    public static final class IntForwarder
+            implements Supplier<Integer>
+    {
+        private final Integer value;
+
+        @Inject
+        public IntForwarder(Integer value)
+        {
+            this.value = value;
+        }
+
+        @Override
+        public Integer get()
+        {
+            return value;
+        }
+    }
+
+    public static final class IntForwarderModule
+            extends PrivateModule
+    {
+        private final String name;
+        private final Integer value;
+
+        public IntForwarderModule(String name, Integer value)
+        {
+            this.name = name;
+            this.value = value;
+        }
+
+        @Override
+        protected void configure()
+        {
+            bind(Integer.class).toInstance(value);
+            bind(new TypeLiteral<Supplier<Integer>>() {}).annotatedWith(Names.named(name)).to(IntForwarder.class);
+            expose(new TypeLiteral<Supplier<Integer>>() {}).annotatedWith(Names.named(name));
+        }
+    }
+
+    public void testThing()
+            throws Throwable
+    {
+        Injector injector = Guice.createInjector(new IntForwarderModule("a", 1), new IntForwarderModule("b", 2));
+        System.out.println(injector.getInstance(Key.get(new TypeLiteral<Supplier<Integer>>() {}, Names.named("a"))).get());
+        System.out.println(injector.getInstance(Key.get(new TypeLiteral<Supplier<Integer>>() {}, Names.named("b"))).get());
     }
 }

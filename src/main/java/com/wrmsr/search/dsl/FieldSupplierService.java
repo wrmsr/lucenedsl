@@ -11,10 +11,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wrmsr.search.dsl.scoring;
+package com.wrmsr.search.dsl;
 
-@FunctionalInterface
-public interface ScoreVarSupplier<T>
+import org.apache.lucene.util.BytesRef;
+
+import java.util.function.Supplier;
+
+public interface FieldSupplierService
 {
-    T get();
+    Supplier<String> getStringFieldSupplier(String fieldName);
+
+    Supplier<String[]> getStringsFieldSupplier(String fieldName);
+
+    Supplier<BytesRef> getBytesRefFieldSupplier(String fieldName);
+
+    Supplier<BytesRef[]> getBytesRefsFieldSupplier(String fieldName);
 }

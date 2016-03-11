@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.function.Supplier;
 
 public class FieldSupplierServiceImpl
-    implements DocSpecific
+        implements FieldSupplierService, DocSpecific
 {
     private AtomicReaderContext atomicReaderContext;
     private int docId;
@@ -54,22 +54,26 @@ public class FieldSupplierServiceImpl
         }
     }
 
-    public Supplier<String> getStringFieldSupplier(String fieldName) throws IOException
+    @Override
+    public Supplier<String> getStringFieldSupplier(String fieldName)
     {
         return () -> getDocument().get(fieldName);
     }
 
-    public Supplier<String[]> getStringsFieldSupplier(String fieldName) throws IOException
+    @Override
+    public Supplier<String[]> getStringsFieldSupplier(String fieldName)
     {
         return () -> getDocument().getValues(fieldName);
     }
 
-    public Supplier<BytesRef> getBytesRefFieldSupplier(String fieldName) throws IOException
+    @Override
+    public Supplier<BytesRef> getBytesRefFieldSupplier(String fieldName)
     {
         return () -> getDocument().getBinaryValue(fieldName);
     }
 
-    public Supplier<BytesRef[]> getBytesRefsFieldSupplier(String fieldName) throws IOException
+    @Override
+    public Supplier<BytesRef[]> getBytesRefsFieldSupplier(String fieldName)
     {
         return () -> getDocument().getBinaryValues(fieldName);
     }
