@@ -14,7 +14,6 @@
 package com.wrmsr.search.dsl;
 
 import com.google.inject.Inject;
-import com.wrmsr.search.dsl.scoring.ScoreSupplier;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -23,9 +22,10 @@ import org.apache.lucene.search.TopScoreDocCollector;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.function.Supplier;
 
-public class SearcherImpl
-    implements Searcher
+class SearcherImpl
+        implements Searcher
 {
     private final IndexSearcher indexSearcher;
     private final Set<DocSpecific> docSpecificSet;
@@ -40,7 +40,7 @@ public class SearcherImpl
     }
 
     @Override
-    public ScoreDoc[] search(Query query, ScoreSupplier scoreSupplier, int maxHits)
+    public ScoreDoc[] search(Query query, Supplier<Float> scoreSupplier, int maxHits)
             throws IOException
     {
         Query scoredQuery = new ComputedScoreQuery(new DocSpecific.Composite(docSpecificSet), scoreSupplier, query);

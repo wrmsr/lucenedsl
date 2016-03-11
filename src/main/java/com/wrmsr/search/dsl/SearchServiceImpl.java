@@ -18,10 +18,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 import com.wrmsr.search.dsl.lucene.LuceneQueryCompiler;
 import com.wrmsr.search.dsl.lucene.QueryTermRenderer;
 import com.wrmsr.search.dsl.query.node.QueryNode;
-import com.wrmsr.search.dsl.scoring.ScoreSupplier;
+import com.wrmsr.search.dsl.scoring.ScoreVars;
 import com.wrmsr.search.dsl.util.ScopeListeners;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -44,10 +45,11 @@ import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkState;
 
-public class SearchServiceImpl
+class SearchServiceImpl
         implements SearchService
 {
     private final Injector injector;
@@ -133,7 +135,7 @@ public class SearchServiceImpl
             throws IOException
     {
         Query query = new LuceneQueryCompiler(analyzer, new QueryTermRenderer()).compileQuery(queryNode);
-        ScoreSupplier scoreSupplier = () -> 100.0f;
+        // Supplier<Float> scoreSupplier = () -> 100.0f;
 
         Lock lock = indexSearcherLock.readLock();
         try {
@@ -148,6 +150,8 @@ public class SearchServiceImpl
                 searchScopeListeners.enter();
                 try {
                     final Searcher searcher = injector.getInstance(Searcher.class);
+                    final Supplier<Float> scoreSupplier = injector.getInstance(Key.get(new TypeLiteral<Supplier<Float>>() {}, ScoreVars.scoreVar("weird_score")));
+
                     ScoreDoc[] scoreDocs = searcher.search(query, scoreSupplier, maxHits);
 
                     ImmutableList.Builder<Hit> builder = ImmutableList.builder();

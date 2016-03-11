@@ -13,7 +13,6 @@
  */
 package com.wrmsr.search.dsl;
 
-import com.wrmsr.search.dsl.scoring.ScoreSupplier;
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -31,18 +30,22 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public class ComputedScoreQuery
         extends Query
 {
     protected final DocSpecific docSpecific;
-    protected final ScoreSupplier scoreSupplier;
+    protected final Supplier<Float> scoreSupplier;
 
     protected final Query query;
 
+    protected AtomicReaderContext lastContext;
+    protected int lastDocId;
+
     public ComputedScoreQuery(
             DocSpecific docSpecific,
-            ScoreSupplier scoreSupplier,
+            Supplier<Float> scoreSupplier,
             Query query)
     {
         this.docSpecific = docSpecific;
@@ -130,7 +133,7 @@ public class ComputedScoreQuery
             if (disi == null) {
                 return null;
             }
-            return new ComputedScorer(disi, this, queryWeight);
+            return new ComputedScorer(context, disi, this, queryWeight);
         }
 
         @Override
@@ -166,12 +169,16 @@ public class ComputedScoreQuery
     protected class ComputedScorer
             extends Scorer
     {
+        private final AtomicReaderContext context;
         private final DocIdSetIterator docIdSetIterator;
         private final float queryWeight;
 
-        public ComputedScorer(DocIdSetIterator docIdSetIterator, Weight w, float queryWeight)
+        private int docId;
+
+        public ComputedScorer(AtomicReaderContext context, DocIdSetIterator docIdSetIterator, Weight w, float queryWeight)
         {
             super(w);
+            this.context = context;
             this.docIdSetIterator = docIdSetIterator;
             this.queryWeight = queryWeight;
         }
@@ -180,8 +187,7 @@ public class ComputedScoreQuery
         public int nextDoc()
                 throws IOException
         {
-            int docId = docIdSetIterator.nextDoc();
-            docSpecific.setDocId(docId);
+            docId = docIdSetIterator.nextDoc();
             return docId;
         }
 
@@ -196,6 +202,12 @@ public class ComputedScoreQuery
                 throws IOException
         {
             assert docIdSetIterator.docID() != NO_MORE_DOCS;
+            if (lastContext != context) {
+                docSpecific.setAtomicReaderContext(context);
+            }
+            if (lastDocId != docId) {
+                docSpecific.setDocId(docId);
+            }
             return scoreSupplier.get() * queryWeight;
         }
 
@@ -210,8 +222,7 @@ public class ComputedScoreQuery
         public int advance(int target)
                 throws IOException
         {
-            int docId = docIdSetIterator.advance(target);
-            docSpecific.setDocId(docId);
+            docId = docIdSetIterator.advance(target);
             return docId;
         }
 

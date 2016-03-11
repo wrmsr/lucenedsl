@@ -13,14 +13,14 @@
  */
 package com.wrmsr.search.dsl;
 
-import com.wrmsr.search.dsl.scoring.ScoreSupplier;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 
 public interface Searcher
 {
-    ScoreDoc[] search(Query query, ScoreSupplier scoreSupplier, int maxHits)
+    ScoreDoc[] search(Query query, Supplier<Float> scoreSupplier, int maxHits)
             throws IOException;
 }
