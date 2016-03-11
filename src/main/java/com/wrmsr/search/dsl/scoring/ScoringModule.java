@@ -13,12 +13,15 @@
  */
 package com.wrmsr.search.dsl.scoring;
 
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
-import com.wrmsr.search.dsl.SearchScope;
 import com.wrmsr.search.dsl.SearchScoped;
 
+import java.lang.reflect.Method;
+import java.util.List;
 import java.util.function.Supplier;
 
 public class ScoringModule
@@ -28,5 +31,12 @@ public class ScoringModule
     public void configure(Binder binder)
     {
         binder.bind(new TypeLiteral<Supplier<Float>>() {}).annotatedWith(ScoreVars.scoreVar("weird_score")).to(ComputeWeirdScore.class).in(SearchScoped.class);
+
+        try {
+            List<Method> methods = ImmutableList.copyOf(Computations.class.getDeclaredMethods());
+        }
+        catch (ReflectiveOperationException e) {
+            throw Throwables.propagate(e);
+        }
     }
 }
