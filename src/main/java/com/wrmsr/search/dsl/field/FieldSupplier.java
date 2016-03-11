@@ -11,26 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wrmsr.search.dsl;
+package com.wrmsr.search.dsl.field;
 
-import org.apache.lucene.index.AtomicReaderContext;
+import java.util.function.Supplier;
 
-import java.io.IOException;
-
-public class FieldData<T>
+@FunctionalInterface
+interface FieldSupplier<T>
+        extends Supplier<T>
 {
-    private final AtomicReaderContext context;
-    private final String fieldName;
-
-    public FieldData(AtomicReaderContext context, String fieldName)
-    {
-        this.context = context;
-        this.fieldName = fieldName;
-    }
-
-    public T get(Integer integer)
-            throws IOException
-    {
-        return null;
-    }
 }

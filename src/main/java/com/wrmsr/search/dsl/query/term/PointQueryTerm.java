@@ -15,7 +15,7 @@ package com.wrmsr.search.dsl.query.term;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.wrmsr.search.dsl.utils.Point;
+import com.wrmsr.search.dsl.util.Point;
 
 public class PointQueryTerm
         extends QueryTerm<Point>

@@ -13,7 +13,7 @@
  */
 package com.wrmsr.search.dsl;
 
-import com.wrmsr.search.dsl.utils.SimpleScope;
+import com.wrmsr.search.dsl.util.SimpleScope;
 
 public class SearchScope
         extends SimpleScope

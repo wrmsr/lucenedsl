@@ -11,19 +11,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wrmsr.search.dsl;
+package com.wrmsr.search.dsl.field;
 
 import org.apache.lucene.util.BytesRef;
 
-import java.util.function.Supplier;
-
 public interface FieldSupplierService
 {
-    Supplier<String> getStringFieldSupplier(String fieldName);
+    FieldSupplier<String> getStringFieldSupplier(String fieldName);
 
-    Supplier<String[]> getStringsFieldSupplier(String fieldName);
+    FieldSupplier<String[]> getStringsFieldSupplier(String fieldName);
 
-    Supplier<BytesRef> getBytesRefFieldSupplier(String fieldName);
+    FieldSupplier<BytesRef> getBytesRefFieldSupplier(String fieldName);
 
-    Supplier<BytesRef[]> getBytesRefsFieldSupplier(String fieldName);
+    FieldSupplier<BytesRef[]> getBytesRefsFieldSupplier(String fieldName);
 }

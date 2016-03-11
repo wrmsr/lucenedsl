@@ -22,7 +22,7 @@ import com.wrmsr.search.dsl.lucene.LuceneQueryCompiler;
 import com.wrmsr.search.dsl.lucene.QueryTermRenderer;
 import com.wrmsr.search.dsl.query.node.QueryNode;
 import com.wrmsr.search.dsl.scoring.ScoreSupplier;
-import com.wrmsr.search.dsl.utils.ScopeListeners;
+import com.wrmsr.search.dsl.util.ScopeListeners;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;

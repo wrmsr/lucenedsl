@@ -11,10 +11,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wrmsr.search.dsl.scoring;
+package com.wrmsr.search.dsl.field;
 
-@FunctionalInterface
-public interface ScoreVarSupplier<T>
+import com.wrmsr.search.dsl.util.Box;
+
+public final class FieldName
+        extends Box<String>
 {
-    T get();
+    public FieldName(String value)
+    {
+        super(value);
+    }
 }

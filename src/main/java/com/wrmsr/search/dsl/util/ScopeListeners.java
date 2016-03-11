@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wrmsr.search.dsl.utils;
+package com.wrmsr.search.dsl.util;
 
 import com.google.common.base.Throwables;
 import com.google.inject.Injector;

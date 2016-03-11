@@ -11,17 +11,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wrmsr.search.dsl;
+package com.wrmsr.search.dsl.field;
 
 import com.google.common.base.Throwables;
+import com.wrmsr.search.dsl.DocSpecific;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.util.BytesRef;
 
 import java.io.IOException;
-import java.util.function.Supplier;
 
-public class FieldSupplierServiceImpl
+class FieldSupplierServiceImpl
         implements FieldSupplierService, DocSpecific
 {
     private AtomicReaderContext atomicReaderContext;
@@ -55,25 +55,25 @@ public class FieldSupplierServiceImpl
     }
 
     @Override
-    public Supplier<String> getStringFieldSupplier(String fieldName)
+    public FieldSupplier<String> getStringFieldSupplier(String fieldName)
     {
         return () -> getDocument().get(fieldName);
     }
 
     @Override
-    public Supplier<String[]> getStringsFieldSupplier(String fieldName)
+    public FieldSupplier<String[]> getStringsFieldSupplier(String fieldName)
     {
         return () -> getDocument().getValues(fieldName);
     }
 
     @Override
-    public Supplier<BytesRef> getBytesRefFieldSupplier(String fieldName)
+    public FieldSupplier<BytesRef> getBytesRefFieldSupplier(String fieldName)
     {
         return () -> getDocument().getBinaryValue(fieldName);
     }
 
     @Override
-    public Supplier<BytesRef[]> getBytesRefsFieldSupplier(String fieldName)
+    public FieldSupplier<BytesRef[]> getBytesRefsFieldSupplier(String fieldName)
     {
         return () -> getDocument().getBinaryValues(fieldName);
     }

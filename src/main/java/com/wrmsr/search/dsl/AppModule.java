@@ -16,8 +16,9 @@ package com.wrmsr.search.dsl;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
+import com.wrmsr.search.dsl.field.FieldModule;
 import com.wrmsr.search.dsl.scoring.ScoringModule;
-import com.wrmsr.search.dsl.utils.ScopeListeners;
+import com.wrmsr.search.dsl.util.ScopeListeners;
 import org.apache.lucene.search.IndexSearcher;
 
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
@@ -25,10 +26,10 @@ import static com.google.inject.multibindings.Multibinder.newSetBinder;
 public class AppModule
         implements Module
 {
-
     @Override
     public void configure(Binder binder)
     {
+        binder.install(new FieldModule());
         binder.install(new ScoringModule());
 
         binder.bind(SearchService.class).to(SearchServiceImpl.class).asEagerSingleton();
@@ -42,22 +43,5 @@ public class AppModule
 
         binder.bind(IndexSearcher.class).toProvider(SearchScope.<IndexSearcher>seededKeyProvider()).in(SearchScoped.class);
         binder.bind(Searcher.class).to(SearcherImpl.class).in(SearchScoped.class);
-
-        binder.bind(FieldSupplierService.class).to(FieldSupplierServiceImpl.class).in(SearchScoped.class);
-        newSetBinder(binder, DocSpecific.class).addBinding().to(FieldSupplierServiceImpl.class).in(SearchScoped.class);
-
-        /*
-        List<String> stringFieldNames = ImmutableList.of("isbn", "title");
-
-        binder.bind(new TypeLiteral<ScoreVarSupplier<String>>() {}).annotatedWith(ScoreVars.scoreVar("title")).toProvider(new Provider<ScoreVarSupplier<String>>() {
-            private final FieldSupplierServiceImpl fieldSupplierService;
-
-            @Override
-            public ScoreVarSupplier<String> get()
-            {
-                return null;
-            }
-        })
-        */
     }
 }

@@ -13,8 +13,10 @@
  */
 package com.wrmsr.search.dsl.scoring;
 
+import java.util.function.Supplier;
+
 @FunctionalInterface
 public interface ScoreSupplier
-        extends ScoreVarSupplier<Float>
+        extends Supplier<Float>
 {
 }

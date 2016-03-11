@@ -1,4 +1,4 @@
-package com.wrmsr.search.dsl.utils;
+package com.wrmsr.search.dsl.util;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Key;

@@ -11,22 +11,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wrmsr.search.dsl.scoring;
+package com.wrmsr.search.dsl.field;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Binder;
 import com.google.inject.Module;
-import com.google.inject.TypeLiteral;
+import com.wrmsr.search.dsl.DocSpecific;
 import com.wrmsr.search.dsl.SearchScope;
 import com.wrmsr.search.dsl.SearchScoped;
 
-import java.util.function.Supplier;
+import java.util.List;
 
-public class ScoringModule
+import static com.google.inject.multibindings.Multibinder.newSetBinder;
+
+public class FieldModule
         implements Module
 {
+    public static final List<String> STRING_FIELD_NAMES = ImmutableList.of("isbn", "title");
+
     @Override
     public void configure(Binder binder)
     {
-        binder.bind(new TypeLiteral<Supplier<Float>>() {}).annotatedWith(ScoreVars.scoreVar("weird_score")).to(ComputeWeirdScore.class).in(SearchScoped.class);
+        binder.bind(FieldSupplierService.class).to(FieldSupplierServiceImpl.class).in(SearchScoped.class);
+        newSetBinder(binder, DocSpecific.class).addBinding().to(FieldSupplierServiceImpl.class).in(SearchScoped.class);
+
+        for (String stringFieldName : STRING_FIELD_NAMES) {
+            binder.install(FieldSupplierWiring.createStringFieldSupplierModule(stringFieldName, SearchScoped.class));
+        }
     }
 }
