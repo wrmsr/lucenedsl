@@ -204,9 +204,11 @@ public class ComputedScoreQuery
             assert docIdSetIterator.docID() != NO_MORE_DOCS;
             if (lastContext != context) {
                 docSpecific.setAtomicReaderContext(context);
+                lastContext = context;
             }
             if (lastDocId != docId) {
                 docSpecific.setDocId(docId);
+                lastDocId = docId;
             }
             return scoreSupplier.get() * queryWeight;
         }
