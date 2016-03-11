@@ -32,9 +32,9 @@ public class FieldModule
     @Override
     public void configure(Binder binder)
     {
+        binder.bind(FieldSupplierServiceImpl.class).in(SearchScoped.class);
         binder.bind(FieldSupplierService.class).to(FieldSupplierServiceImpl.class).in(SearchScoped.class);
         newSetBinder(binder, DocSpecific.class).addBinding().to(FieldSupplierServiceImpl.class).in(SearchScoped.class);
-        binder.bind(FieldSupplierServiceImpl.class).in(SearchScoped.class);
 
         for (String stringFieldName : STRING_FIELD_NAMES) {
             binder.install(FieldSupplierWiring.createStringFieldSupplierModule(stringFieldName, SearchScoped.class));
