@@ -32,6 +32,7 @@ public class FieldModule
     @Override
     public void configure(Binder binder)
     {
+        binder.bind(FieldSupplierServiceState.class).in(SearchScoped.class);
         binder.bind(FieldSupplierService.class).to(FieldSupplierServiceImpl.class).in(SearchScoped.class);
         newSetBinder(binder, DocSpecific.class).addBinding().to(FieldSupplierServiceImpl.class).in(SearchScoped.class);
 

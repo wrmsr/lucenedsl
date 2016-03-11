@@ -13,6 +13,8 @@
  */
 package com.wrmsr.search.dsl.field;
 
+import javax.inject.Inject;
+
 import com.google.common.base.Throwables;
 import com.wrmsr.search.dsl.DocSpecific;
 import org.apache.lucene.document.Document;
@@ -24,30 +26,32 @@ import java.io.IOException;
 class FieldSupplierServiceImpl
         implements FieldSupplierService, DocSpecific
 {
-    private AtomicReaderContext atomicReaderContext;
-    private int docId;
 
-    public FieldSupplierServiceImpl()
+    private final FieldSupplierServiceState state;
+
+    @Inject
+    public FieldSupplierServiceImpl(FieldSupplierServiceState fieldSupplierServiceState)
     {
+        this.state = fieldSupplierServiceState;
     }
 
     @Override
     public void setAtomicReaderContext(AtomicReaderContext atomicReaderContext)
             throws IOException
     {
-        this.atomicReaderContext = atomicReaderContext;
+        state.atomicReaderContext = atomicReaderContext;
     }
 
     @Override
     public void setDocId(int docId)
     {
-        this.docId = docId;
+        state.docId = docId;
     }
 
     private Document getDocument()
     {
         try {
-            return atomicReaderContext.reader().document(docId);
+            return state.atomicReaderContext.reader().document(state.docId);
         }
         catch (IOException e) {
             throw Throwables.propagate(e);
