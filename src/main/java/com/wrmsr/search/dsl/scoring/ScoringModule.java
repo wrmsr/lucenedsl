@@ -20,9 +20,14 @@ import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.wrmsr.search.dsl.SearchScoped;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Supplier;
+
+import static com.google.common.base.Preconditions.checkState;
+import static java.lang.invoke.MethodHandles.lookup;
 
 public class ScoringModule
         implements Module
@@ -32,8 +37,16 @@ public class ScoringModule
     {
         binder.bind(new TypeLiteral<Supplier<Float>>() {}).annotatedWith(ScoreVars.scoreVar("weird_score")).to(ComputeWeirdScore.class).in(SearchScoped.class);
 
+        CHALLENGE ACCEPTED: do this without bytecode generation
         try {
             List<Method> methods = ImmutableList.copyOf(Computations.class.getDeclaredMethods());
+            for (Method method : methods) {
+                AnnotatedType returnType = method.getAnnotatedReturnType();
+                List<AnnotatedType> paramTypes = ImmutableList.copyOf(method.getAnnotatedParameterTypes());
+                checkState(returnType.isAnnotationPresent(ScoreVar.class));
+                checkState(paramTypes.stream().allMatch(t -> t.isAnnotationPresent(ScoreVar.class)));
+                lookup().unreflect(method)
+            }
         }
         catch (ReflectiveOperationException e) {
             throw Throwables.propagate(e);

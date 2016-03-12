@@ -13,6 +13,8 @@
  */
 package com.wrmsr.search.dsl.scoring;
 
+import com.google.inject.Inject;
+
 public final class Computations
 {
     private Computations()
