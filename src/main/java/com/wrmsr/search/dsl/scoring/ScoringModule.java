@@ -13,11 +13,14 @@
  */
 package com.wrmsr.search.dsl.scoring;
 
+import com.facebook.presto.bytecode.BytecodeBlock;
 import com.facebook.presto.bytecode.ClassDefinition;
 import com.facebook.presto.bytecode.CompilerUtils;
 import com.facebook.presto.bytecode.MethodDefinition;
 import com.facebook.presto.bytecode.Parameter;
 import com.facebook.presto.bytecode.ParameterizedType;
+import com.facebook.presto.bytecode.Scope;
+import com.facebook.presto.bytecode.Variable;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Binder;
@@ -26,11 +29,9 @@ import com.google.inject.TypeLiteral;
 import com.wrmsr.search.dsl.SearchScoped;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -46,6 +47,15 @@ import static java.lang.invoke.MethodHandles.lookup;
 public class ScoringModule
         implements Module
 {
+    public static class Fuck
+    {
+        @ScoreVar("isbn_length")
+        public static float computeIsbnLength(@ScoreVar("isbn") String isbn)
+        {
+            return (float) isbn.length();
+        }
+    }
+
     @Override
     public void configure(Binder binder)
     {
@@ -53,44 +63,40 @@ public class ScoringModule
 
         // CHALLENGE ACCEPTED: do this without bytecode generation
         try {
-            List<Method> methods = ImmutableList.copyOf(Computations.class.getDeclaredMethods());
+            List<Method> methods = ImmutableList.copyOf(Fuck.class.getDeclaredMethods());
             for (Method method : methods) {
-                AnnotatedType returnType = method.getAnnotatedReturnType();
+                java.lang.reflect.AnnotatedType returnType = method.getAnnotatedReturnType();
                 List<java.lang.reflect.Parameter> params = ImmutableList.copyOf(method.getParameters());
-                List<AnnotatedType> paramTypes = ImmutableList.copyOf(method.getAnnotatedParameterTypes());
+                List<java.lang.reflect.AnnotatedType> paramTypes = ImmutableList.copyOf(method.getAnnotatedParameterTypes());
                 checkState(params.size() == paramTypes.size());
-                checkState(returnType.isAnnotationPresent(ScoreVar.class));
+                // HURR its a method anno
+                // checkState(returnType.isAnnotationPresent(ScoreVar.class));
                 checkState(paramTypes.stream().allMatch(pt -> pt.isAnnotationPresent(ScoreVar.class)));
+                List<ParameterizedType> paramPts = paramTypes.stream().map(pt -> fromReflectType(pt.getType())).collect(Collectors.toList());
 
                 MethodHandle target = lookup().unreflect(method);
 
                 // TODO parameterized params, primitive params
 
-//                ClassDefinition classDefinition = new ClassDefinition(
-//                        a(PUBLIC, FINAL),
-//                        CompilerUtils.makeClassName("get"),
-//                        type(Object.class));
-//
-//                classDefinition.declareDefaultConstructor(a(PRIVATE));
-//
-//                List<Parameter> parameters = IntStream.range(0, params.size()).boxed()
-//                        .map(i -> Parameter.arg(params.get(i).getName(), (Class) paramTypes.get(i).getType()))
-//                        .collect(Collectors.toList());
-//
-//                MethodDefinition methodDefinition = classDefinition.declareMethod(a(PUBLIC, STATIC), "get", type((Class) returnType.getType()), parameters);
-//                annotateParameters(fieldTypes, methodDefinition);
+                ClassDefinition classDefinition = new ClassDefinition(
+                        a(PUBLIC, FINAL),
+                        CompilerUtils.makeClassName("get"),
+                        type(Object.class));
+                classDefinition.declareDefaultConstructor(a(PRIVATE));
 
+                List<Parameter> parameters = IntStream.range(0, params.size()).boxed()
+                        .map(i -> Parameter.arg(params.get(i).getName(), ParameterizedType.type(Supplier.class, paramPts.get(i))))
+                        .collect(Collectors.toList());
 
+                MethodDefinition methodDefinition = classDefinition.declareMethod(a(PUBLIC, STATIC), "get", type((Class) returnType.getType()), parameters);
 
-
-//
-//                Scope scope = methodDefinition.getScope();
-//                CallSiteBinder binder = new CallSiteBinder();
-//                BytecodeBlock body = methodDefinition.getBody();
-//
-//                Variable blockBuilder = scope.declareVariable(BlockBuilder.class, "blockBuilder");
-//
-//                ClassVisitor cv
+                Scope scope = methodDefinition.getScope();
+                BytecodeBlock body = methodDefinition.getBody();
+                for (int i = 0; i < params.size(); ++i) {
+                    Variable arg = scope.getVariable(params.get(i).getName());
+                    body.getVariable(arg);
+                    body.invokeInterface(Supplier.class, "get", params.get(i).getType());
+                }
             }
         }
         catch (ReflectiveOperationException e) {
