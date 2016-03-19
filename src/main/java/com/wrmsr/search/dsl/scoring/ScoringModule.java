@@ -16,6 +16,7 @@ package com.wrmsr.search.dsl.scoring;
 import com.facebook.presto.bytecode.BytecodeBlock;
 import com.facebook.presto.bytecode.ClassDefinition;
 import com.facebook.presto.bytecode.CompilerUtils;
+import com.facebook.presto.bytecode.DynamicClassLoader;
 import com.facebook.presto.bytecode.MethodDefinition;
 import com.facebook.presto.bytecode.Parameter;
 import com.facebook.presto.bytecode.ParameterizedType;
@@ -23,6 +24,7 @@ import com.facebook.presto.bytecode.Scope;
 import com.facebook.presto.bytecode.Variable;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
@@ -40,6 +42,7 @@ import static com.facebook.presto.bytecode.Access.PRIVATE;
 import static com.facebook.presto.bytecode.Access.PUBLIC;
 import static com.facebook.presto.bytecode.Access.STATIC;
 import static com.facebook.presto.bytecode.Access.a;
+import static com.facebook.presto.bytecode.CompilerUtils.defineClass;
 import static com.facebook.presto.bytecode.ParameterizedType.type;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.invoke.MethodHandles.lookup;
@@ -75,8 +78,6 @@ public class ScoringModule
                 // checkState(paramTypes.stream().allMatch(pt -> pt.isAnnotationPresent(ScoreVar.class)));
                 List<ParameterizedType> paramPts = paramTypes.stream().map(pt -> fromReflectType(pt.getType())).collect(Collectors.toList());
 
-                MethodHandle target = lookup().unreflect(method);
-
                 // TODO parameterized params, primitive params
 
                 ClassDefinition classDefinition = new ClassDefinition(
@@ -98,9 +99,13 @@ public class ScoringModule
                     body.getVariable(arg);
                     body.invokeInterface(Supplier.class, "get", params.get(i).getType());
                 }
+                body.invokeStatic(method);
+                body.retObject();
+
+                Class<?> cls = defineClass(classDefinition, Object.class, ImmutableMap.of(), new DynamicClassLoader(ScoringModule.class.getClassLoader()));
             }
         }
-        catch (ReflectiveOperationException e) {
+        catch (Exception e) {
             throw Throwables.propagate(e);
         }
     }
