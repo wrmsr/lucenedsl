@@ -13,6 +13,11 @@
  */
 package com.wrmsr.search.dsl.scoring;
 
+import com.facebook.presto.bytecode.ClassDefinition;
+import com.facebook.presto.bytecode.CompilerUtils;
+import com.facebook.presto.bytecode.MethodDefinition;
+import com.facebook.presto.bytecode.Parameter;
+import com.facebook.presto.bytecode.ParameterizedType;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Binder;
@@ -20,12 +25,21 @@ import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.wrmsr.search.dsl.SearchScoped;
 
-import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static com.facebook.presto.bytecode.Access.FINAL;
+import static com.facebook.presto.bytecode.Access.PRIVATE;
+import static com.facebook.presto.bytecode.Access.PUBLIC;
+import static com.facebook.presto.bytecode.Access.STATIC;
+import static com.facebook.presto.bytecode.Access.a;
+import static com.facebook.presto.bytecode.ParameterizedType.type;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.invoke.MethodHandles.lookup;
 
@@ -37,19 +51,65 @@ public class ScoringModule
     {
         binder.bind(new TypeLiteral<Supplier<Float>>() {}).annotatedWith(ScoreVars.scoreVar("weird_score")).to(ComputeWeirdScore.class).in(SearchScoped.class);
 
-        CHALLENGE ACCEPTED: do this without bytecode generation
+        // CHALLENGE ACCEPTED: do this without bytecode generation
         try {
             List<Method> methods = ImmutableList.copyOf(Computations.class.getDeclaredMethods());
             for (Method method : methods) {
                 AnnotatedType returnType = method.getAnnotatedReturnType();
+                List<java.lang.reflect.Parameter> params = ImmutableList.copyOf(method.getParameters());
                 List<AnnotatedType> paramTypes = ImmutableList.copyOf(method.getAnnotatedParameterTypes());
+                checkState(params.size() == paramTypes.size());
                 checkState(returnType.isAnnotationPresent(ScoreVar.class));
-                checkState(paramTypes.stream().allMatch(t -> t.isAnnotationPresent(ScoreVar.class)));
-                lookup().unreflect(method)
+                checkState(paramTypes.stream().allMatch(pt -> pt.isAnnotationPresent(ScoreVar.class)));
+
+                MethodHandle target = lookup().unreflect(method);
+
+                // TODO parameterized params, primitive params
+
+//                ClassDefinition classDefinition = new ClassDefinition(
+//                        a(PUBLIC, FINAL),
+//                        CompilerUtils.makeClassName("get"),
+//                        type(Object.class));
+//
+//                classDefinition.declareDefaultConstructor(a(PRIVATE));
+//
+//                List<Parameter> parameters = IntStream.range(0, params.size()).boxed()
+//                        .map(i -> Parameter.arg(params.get(i).getName(), (Class) paramTypes.get(i).getType()))
+//                        .collect(Collectors.toList());
+//
+//                MethodDefinition methodDefinition = classDefinition.declareMethod(a(PUBLIC, STATIC), "get", type((Class) returnType.getType()), parameters);
+//                annotateParameters(fieldTypes, methodDefinition);
+
+
+
+
+//
+//                Scope scope = methodDefinition.getScope();
+//                CallSiteBinder binder = new CallSiteBinder();
+//                BytecodeBlock body = methodDefinition.getBody();
+//
+//                Variable blockBuilder = scope.declareVariable(BlockBuilder.class, "blockBuilder");
+//
+//                ClassVisitor cv
             }
         }
         catch (ReflectiveOperationException e) {
             throw Throwables.propagate(e);
+        }
+    }
+
+    public static ParameterizedType fromReflectType(java.lang.reflect.Type type)
+    {
+        if (type instanceof Class) {
+            return ParameterizedType.type((Class) type);
+        }
+        else if (type instanceof java.lang.reflect.ParameterizedType) {
+            return ParameterizedType.type(
+                    (Class) ((java.lang.reflect.ParameterizedType) type).getRawType(),
+                    ImmutableList.copyOf(((java.lang.reflect.ParameterizedType) type).getActualTypeArguments()).stream().map(t -> fromReflectType(t)).collect(Collectors.toList()).toArray(new ParameterizedType[0]));
+        }
+        else {
+            throw new IllegalArgumentException();
         }
     }
 }

@@ -16,6 +16,7 @@
         <dep.guice.version>4.0</dep.guice.version>
         <dep.guava.version>18.0</dep.guava.version>
         <dep.lucene.version>4.9.1</dep.lucene.version>
+        <dep.asm.version>5.1</dep.asm.version>
     </properties>
 
     <dependencies>
@@ -60,6 +61,20 @@
             <artifactId>guice-assistedinject</artifactId>
             <version>${dep.guice.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.facebook.presto</groupId>
+            <artifactId>presto-bytecode</artifactId>
+            <version>0.142</version>
+        </dependency>
+
+        <!--<dependency>-->
+            <!--<groupId>org.ow2.asm</groupId>-->
+            <!--<artifactId>asm</artifactId>-->
+            <!--<version>${dep.asm.version}</version>-->
+        <!--</dependency>-->
+
+
 
         <dependency>
             <groupId>junit</groupId>

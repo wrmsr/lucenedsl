@@ -15,6 +15,8 @@ package com.wrmsr.search.dsl.scoring;
 
 import com.google.inject.Inject;
 
+import java.util.List;
+
 public final class Computations
 {
     private Computations()
@@ -22,7 +24,7 @@ public final class Computations
     }
 
     @ScoreVar("isbn_length")
-    public static float computeIsbnLength(@ScoreVar("isbn") String isbn)
+    public static float computeIsbnLength(@ScoreVar("isbn") String isbn, @ScoreVar("a") int a, @ScoreVar("b") List<Integer> b)
     {
         return (float) isbn.length();
     }
