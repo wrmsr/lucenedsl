@@ -70,8 +70,9 @@ public class ScoringModule
                 List<java.lang.reflect.AnnotatedType> paramTypes = ImmutableList.copyOf(method.getAnnotatedParameterTypes());
                 checkState(params.size() == paramTypes.size());
                 // HURR its a method anno
+                // also its fucking getParameterAnnotations not getAnnotatedParameters silly me.
                 // checkState(returnType.isAnnotationPresent(ScoreVar.class));
-                checkState(paramTypes.stream().allMatch(pt -> pt.isAnnotationPresent(ScoreVar.class)));
+                // checkState(paramTypes.stream().allMatch(pt -> pt.isAnnotationPresent(ScoreVar.class)));
                 List<ParameterizedType> paramPts = paramTypes.stream().map(pt -> fromReflectType(pt.getType())).collect(Collectors.toList());
 
                 MethodHandle target = lookup().unreflect(method);
