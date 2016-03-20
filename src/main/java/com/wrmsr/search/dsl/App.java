@@ -16,7 +16,7 @@ package com.wrmsr.search.dsl;
 public class App
 {
     public static void main(String[] args)
+            throws Throwable
     {
-        System.out.println("Hello World!");
     }
 }

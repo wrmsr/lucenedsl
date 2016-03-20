@@ -21,7 +21,6 @@ import com.facebook.presto.bytecode.MethodDefinition;
 import com.facebook.presto.bytecode.Parameter;
 import com.facebook.presto.bytecode.ParameterizedType;
 import com.facebook.presto.bytecode.Scope;
-import com.facebook.presto.bytecode.Variable;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -32,6 +31,8 @@ import com.wrmsr.search.dsl.SearchScoped;
 
 import javax.inject.Inject;
 
+import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
@@ -42,7 +43,6 @@ import java.util.stream.IntStream;
 import static com.facebook.presto.bytecode.Access.FINAL;
 import static com.facebook.presto.bytecode.Access.PRIVATE;
 import static com.facebook.presto.bytecode.Access.PUBLIC;
-import static com.facebook.presto.bytecode.Access.STATIC;
 import static com.facebook.presto.bytecode.Access.a;
 import static com.facebook.presto.bytecode.CompilerUtils.defineClass;
 import static com.facebook.presto.bytecode.ParameterizedType.type;
@@ -51,15 +51,6 @@ import static com.google.common.base.Preconditions.checkState;
 public class ScoringModule
         implements Module
 {
-    public static class Fuck
-    {
-        @ScoreVar("isbn_length")
-        public static String computeIsbnLength(@ScoreVar("isbn") String isbn)
-        {
-            return String.valueOf(isbn.length());
-        }
-    }
-
     @Override
     public void configure(Binder binder)
     {
@@ -67,7 +58,7 @@ public class ScoringModule
 
         // CHALLENGE ACCEPTED: do this without bytecode generation
         try {
-            List<Method> methods = ImmutableList.copyOf(Fuck.class.getDeclaredMethods());
+            List<Method> methods = ImmutableList.copyOf(Computations.class.getDeclaredMethods());
             for (Method method : methods) {
                 java.lang.reflect.AnnotatedType returnType = method.getAnnotatedReturnType();
                 List<java.lang.reflect.Parameter> params = ImmutableList.copyOf(method.getParameters());
@@ -78,6 +69,8 @@ public class ScoringModule
                         .findFirst()
                         .map(ScoreVar.class::cast)
                         .get();
+                Annotation[][] paramAnnos = method.getParameterAnnotations();
+                List<ScoreVar> inVars = Arrays.stream(paramAnnos).map(as -> Arrays.stream(as).filter(ScoreVar.class::isInstance).findFirst().map(ScoreVar.class::cast).get()).collect(Collectors.toList());
                 // HURR its a method anno
                 // also its fucking getParameterAnnotations not getAnnotatedParameters silly me.
                 // checkState(returnType.isAnnotationPresent(ScoreVar.class));
@@ -100,6 +93,9 @@ public class ScoringModule
                 parameters.forEach(p -> classDef.addField(a(PRIVATE, FINAL), p.getName(), p.getType()));
 
                 MethodDefinition methodDef = classDef.declareConstructor(a(PUBLIC), parameters);
+                for (int i = 0; i < params.size(); ++i) {
+                    methodDef.declareParameterAnnotation(ScoreVar.class, i).setValue("value", inVars.get(i).value());
+                }
                 methodDef.declareAnnotation(Inject.class);
                 Scope scope = methodDef.getScope();
                 BytecodeBlock body = methodDef.getBody();
@@ -115,7 +111,7 @@ public class ScoringModule
                 body
                         .ret();
 
-                methodDef = classDef.declareMethod(a(PUBLIC), "get", type((Class) returnType.getType()));
+                methodDef = classDef.declareMethod(a(PUBLIC, FINAL), "get", type(Object.class)); //type((Class) returnType.getType()));
                 methodDef.declareAnnotation(Override.class);
                 scope = methodDef.getScope();
                 body = methodDef.getBody();
@@ -123,14 +119,16 @@ public class ScoringModule
                     body
                             .getVariable(scope.getThis())
                             .getField(classDef.getFields().get(i))
-                            .invokeInterface(Supplier.class, "get", params.get(i).getType());
+                            .invokeInterface(Supplier.class, "get", Object.class)
+                            .checkCast(params.get(i).getType());
                     // body.invokeInterface(Float.class, "floatValue", float.class);
                 }
                 body.invokeStatic(method);
-                body.retObject(); // FIXME
+                body.ret(method.getReturnType());
 
-                Class<?> cls = defineClass(classDef, Object.class, ImmutableMap.of(), new DynamicClassLoader(ScoringModule.class.getClassLoader()));
-                System.out.println(cls);
+                Class cls = defineClass(classDef, Object.class, ImmutableMap.<Long, MethodHandle>of(), new DynamicClassLoader(ScoringModule.class.getClassLoader()));
+
+                binder.bind(new TypeLiteral<Supplier<String>>() {}).annotatedWith(ScoreVars.scoreVar(outVar.value())).to(cls).in(SearchScoped.class);
             }
         }
         catch (Exception e) {
