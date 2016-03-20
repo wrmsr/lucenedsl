@@ -30,8 +30,10 @@ import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.wrmsr.search.dsl.SearchScoped;
 
-import java.lang.invoke.MethodHandle;
+import javax.inject.Inject;
+
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -45,7 +47,6 @@ import static com.facebook.presto.bytecode.Access.a;
 import static com.facebook.presto.bytecode.CompilerUtils.defineClass;
 import static com.facebook.presto.bytecode.ParameterizedType.type;
 import static com.google.common.base.Preconditions.checkState;
-import static java.lang.invoke.MethodHandles.lookup;
 
 public class ScoringModule
         implements Module
@@ -53,9 +54,9 @@ public class ScoringModule
     public static class Fuck
     {
         @ScoreVar("isbn_length")
-        public static float computeIsbnLength(@ScoreVar("isbn") String isbn)
+        public static String computeIsbnLength(@ScoreVar("isbn") String isbn)
         {
-            return (float) isbn.length();
+            return String.valueOf(isbn.length());
         }
     }
 
@@ -72,6 +73,11 @@ public class ScoringModule
                 List<java.lang.reflect.Parameter> params = ImmutableList.copyOf(method.getParameters());
                 List<java.lang.reflect.AnnotatedType> paramTypes = ImmutableList.copyOf(method.getAnnotatedParameterTypes());
                 checkState(params.size() == paramTypes.size());
+                ScoreVar outVar = Arrays.stream(method.getDeclaredAnnotations())
+                        .filter(ScoreVar.class::isInstance)
+                        .findFirst()
+                        .map(ScoreVar.class::cast)
+                        .get();
                 // HURR its a method anno
                 // also its fucking getParameterAnnotations not getAnnotatedParameters silly me.
                 // checkState(returnType.isAnnotationPresent(ScoreVar.class));
@@ -80,30 +86,50 @@ public class ScoringModule
 
                 // TODO parameterized params, primitive params
 
-                ClassDefinition classDefinition = new ClassDefinition(
+                ClassDefinition classDef = new ClassDefinition(
                         a(PUBLIC, FINAL),
                         CompilerUtils.makeClassName("get"),
-                        type(Object.class));
-                classDefinition.declareDefaultConstructor(a(PRIVATE));
+                        type(Object.class),
+                        // FIXME box primitives to Supplier typeparams
+                        type(Supplier.class, fromReflectType(method.getGenericReturnType())));
+                classDef.declareAnnotation(ScoreVar.class).setValue("value", outVar.value());
 
                 List<Parameter> parameters = IntStream.range(0, params.size()).boxed()
                         .map(i -> Parameter.arg(params.get(i).getName(), ParameterizedType.type(Supplier.class, paramPts.get(i))))
                         .collect(Collectors.toList());
+                parameters.forEach(p -> classDef.addField(a(PRIVATE, FINAL), p.getName(), p.getType()));
 
-                MethodDefinition methodDefinition = classDefinition.declareMethod(a(PUBLIC, STATIC), "get", type((Class) returnType.getType()), parameters);
-
-                Scope scope = methodDefinition.getScope();
-                BytecodeBlock body = methodDefinition.getBody();
+                MethodDefinition methodDef = classDef.declareConstructor(a(PUBLIC), parameters);
+                methodDef.declareAnnotation(Inject.class);
+                Scope scope = methodDef.getScope();
+                BytecodeBlock body = methodDef.getBody();
+                body
+                        .getVariable(scope.getThis())
+                        .invokeConstructor(Object.class);
                 for (int i = 0; i < params.size(); ++i) {
-                    Variable arg = scope.getVariable(params.get(i).getName());
-                    body.getVariable(arg);
-                    body.invokeInterface(Supplier.class, "get", params.get(i).getType());
+                    body
+                            .getVariable(scope.getThis())
+                            .getVariable(scope.getVariable(params.get(i).getName()))
+                            .putField(classDef.getFields().get(i));
+                }
+                body
+                        .ret();
+
+                methodDef = classDef.declareMethod(a(PUBLIC), "get", type((Class) returnType.getType()));
+                methodDef.declareAnnotation(Override.class);
+                scope = methodDef.getScope();
+                body = methodDef.getBody();
+                for (int i = 0; i < params.size(); ++i) {
+                    body
+                            .getVariable(scope.getThis())
+                            .getField(classDef.getFields().get(i))
+                            .invokeInterface(Supplier.class, "get", params.get(i).getType());
                     // body.invokeInterface(Float.class, "floatValue", float.class);
                 }
                 body.invokeStatic(method);
-                body.retFloat();
+                body.retObject(); // FIXME
 
-                Class<?> cls = defineClass(classDefinition, Object.class, ImmutableMap.of(), new DynamicClassLoader(ScoringModule.class.getClassLoader()));
+                Class<?> cls = defineClass(classDef, Object.class, ImmutableMap.of(), new DynamicClassLoader(ScoringModule.class.getClassLoader()));
                 System.out.println(cls);
             }
         }
