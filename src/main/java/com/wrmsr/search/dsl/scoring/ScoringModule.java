@@ -98,11 +98,13 @@ public class ScoringModule
                     Variable arg = scope.getVariable(params.get(i).getName());
                     body.getVariable(arg);
                     body.invokeInterface(Supplier.class, "get", params.get(i).getType());
+                    // body.invokeInterface(Float.class, "floatValue", float.class);
                 }
                 body.invokeStatic(method);
-                body.retObject();
+                body.retFloat();
 
                 Class<?> cls = defineClass(classDefinition, Object.class, ImmutableMap.of(), new DynamicClassLoader(ScoringModule.class.getClassLoader()));
+                System.out.println(cls);
             }
         }
         catch (Exception e) {
