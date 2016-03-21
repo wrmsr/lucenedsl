@@ -34,6 +34,7 @@ import javax.inject.Inject;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
@@ -79,12 +80,20 @@ public class ScoringModule
 
                 // TODO parameterized params, primitive params
 
+                Type suppType;
+                if (method.getReturnType().isPrimitive()) {
+                    suppType = method.getReturnType();
+                }
+                else {
+                     suppType = method.getGenericReturnType();
+                }
+
                 ClassDefinition classDef = new ClassDefinition(
                         a(PUBLIC, FINAL),
                         CompilerUtils.makeClassName("get"),
                         type(Object.class),
                         // FIXME box primitives to Supplier typeparams
-                        type(Supplier.class, fromReflectType(method.getGenericReturnType())));
+                        type(Supplier.class, fromReflectType(suppType)));
                 classDef.declareAnnotation(ScoreVar.class).setValue("value", outVar.value());
 
                 List<Parameter> parameters = IntStream.range(0, params.size()).boxed()
@@ -115,20 +124,31 @@ public class ScoringModule
                 methodDef.declareAnnotation(Override.class);
                 scope = methodDef.getScope();
                 body = methodDef.getBody();
+                if (method.getReturnType() == float.class) {
+                    body
+                            .newObject(Float.class)
+                            .dup();
+                }
                 for (int i = 0; i < params.size(); ++i) {
                     body
                             .getVariable(scope.getThis())
                             .getField(classDef.getFields().get(i))
                             .invokeInterface(Supplier.class, "get", Object.class)
                             .checkCast(params.get(i).getType());
-                    // body.invokeInterface(Float.class, "floatValue", float.class);
+                    if (params.get(i).getType() == float.class) {
+                        body.invokeInterface(Float.class, "floatValue", float.class);
+                    }
                 }
                 body.invokeStatic(method);
-                body.ret(method.getReturnType());
+                if (method.getReturnType() == float.class) {
+                    body
+                            .invokeConstructor(Float.class, float.class);
+                }
+                body.retObject();
 
                 Class cls = defineClass(classDef, Object.class, ImmutableMap.<Long, MethodHandle>of(), new DynamicClassLoader(ScoringModule.class.getClassLoader()));
 
-                binder.bind(new TypeLiteral<Supplier<String>>() {}).annotatedWith(ScoreVars.scoreVar(outVar.value())).to(cls).in(SearchScoped.class);
+                binder.bind(new TypeLiteral<Supplier<Float>>() {}).annotatedWith(ScoreVars.scoreVar(outVar.value())).to(cls).in(SearchScoped.class);
             }
         }
         catch (Exception e) {

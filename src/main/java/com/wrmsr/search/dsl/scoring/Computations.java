@@ -19,9 +19,15 @@ public final class Computations
     {
     }
 
-    @ScoreVar("isbn_length_string")
-    public static String computeIsbnLengthString(@ScoreVar("isbn") String isbn)
+    @ScoreVar("float_one")
+    public static float computeFloatOne()
     {
-        return String.valueOf(isbn.length());
+        return 1.0f;
     }
+
+//    @ScoreVar("isbn_length")
+//    public static float computeIsbnLengthString(@ScoreVar("isbn") String isbn, @ScoreVar("float_one") float floatOne)
+//    {
+//        return (float) isbn.length() + floatOne;
+//    }
 }
