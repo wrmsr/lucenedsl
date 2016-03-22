@@ -28,6 +28,7 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.wrmsr.search.dsl.SearchScoped;
+import com.wrmsr.search.dsl.util.DerivedSuppliers;
 
 import javax.inject.Inject;
 
@@ -78,6 +79,8 @@ public class ScoringModule
                 // checkState(paramTypes.stream().allMatch(pt -> pt.isAnnotationPresent(ScoreVar.class)));
                 List<ParameterizedType> paramPts = paramTypes.stream().map(pt -> fromReflectType(pt.getType())).collect(Collectors.toList());
 
+                DerivedSuppliers.compile(method, ScoringModule.class.getClassLoader());
+
                 // TODO parameterized params, primitive params
 
                 Type suppType;
@@ -85,7 +88,7 @@ public class ScoringModule
                     suppType = method.getReturnType();
                 }
                 else {
-                     suppType = method.getGenericReturnType();
+                    suppType = method.getGenericReturnType();
                 }
 
                 ClassDefinition classDef = new ClassDefinition(
