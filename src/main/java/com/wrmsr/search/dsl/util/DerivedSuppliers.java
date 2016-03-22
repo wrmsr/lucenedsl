@@ -163,25 +163,25 @@ public final class DerivedSuppliers
                     .checkCast(targetParameter.parameterizedBoxedType);
             // lol
             if (targetParameter.type == boolean.class) {
-                body.invokeInterface(Boolean.class, "booleanValue", boolean.class);
+                body.invokeVirtual(Boolean.class, "booleanValue", boolean.class);
             }
             else if (targetParameter.type == byte.class) {
-                body.invokeInterface(Byte.class, "byteValue", byte.class);
+                body.invokeVirtual(Byte.class, "byteValue", byte.class);
             }
             else if (targetParameter.type == short.class) {
-                body.invokeInterface(Short.class, "shortValue", short.class);
+                body.invokeVirtual(Short.class, "shortValue", short.class);
             }
             else if (targetParameter.type == int.class) {
-                body.invokeInterface(Integer.class, "intValue", int.class);
+                body.invokeVirtual(Integer.class, "intValue", int.class);
             }
             else if (targetParameter.type == long.class) {
-                body.invokeInterface(Long.class, "longValue", long.class);
+                body.invokeVirtual(Long.class, "longValue", long.class);
             }
             else if (targetParameter.type == float.class) {
-                body.invokeInterface(Float.class, "floatValue", float.class);
+                body.invokeVirtual(Float.class, "floatValue", float.class);
             }
             else if (targetParameter.type == double.class) {
-                body.invokeInterface(Double.class, "doubleValue", double.class);
+                body.invokeVirtual(Double.class, "doubleValue", double.class);
             }
             else {
                 checkState(!(targetParameter.type instanceof Class && ((Class) targetParameter.type).isPrimitive()));

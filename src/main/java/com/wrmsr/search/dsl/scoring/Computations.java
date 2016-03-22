@@ -25,9 +25,9 @@ public final class Computations
         return 1.0f;
     }
 
-    @ScoreVar("isbn_length")
-    public static float computeIsbnLengthString(@ScoreVar("isbn") String isbn, @ScoreVar("float_one") float floatOne)
+    @ScoreVar("static_weird_score")
+    public static float computeStaticWeirdScore(@ScoreVar("isbn") String isbn, @ScoreVar("float_one") float floatOne, @ScoreVar("weird_score") float weirdScore)
     {
-        return (float) isbn.length() + floatOne;
+        return (float) isbn.length() + floatOne + weirdScore;
     }
 }

@@ -150,9 +150,8 @@ class SearchServiceImpl
                 searchScopeListeners.enter();
                 try {
                     final Searcher searcher = injector.getInstance(Searcher.class);
-                    Supplier<Float> s = injector.getInstance(Key.get(new TypeLiteral<Supplier<Float>>() {}, ScoreVars.scoreVar("isbn_length")));
 
-                    final Supplier<Float> scoreSupplier = injector.getInstance(Key.get(new TypeLiteral<Supplier<Float>>() {}, ScoreVars.scoreVar("weird_score")));
+                    final Supplier<Float> scoreSupplier = injector.getInstance(Key.get(new TypeLiteral<Supplier<Float>>() {}, ScoreVars.scoreVar("static_weird_score")));
 
                     ScoreDoc[] scoreDocs = searcher.search(query, scoreSupplier, maxHits);
 
