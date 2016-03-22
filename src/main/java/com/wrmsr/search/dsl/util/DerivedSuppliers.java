@@ -54,6 +54,7 @@ import static java.util.Objects.requireNonNull;
 /*
 TODO:
 - Allowing passing {name: class} map for Supplier conversion
+- unbox errwhere
 */
 public final class DerivedSuppliers
 {
