@@ -35,7 +35,6 @@ public class ScoringModule
     {
         binder.bind(new TypeLiteral<Supplier<Float>>() {}).annotatedWith(ScoreVars.scoreVar("weird_score")).to(ComputeWeirdScore.class).in(SearchScoped.class);
 
-        // CHALLENGE FAILED: do this without bytecode generation
         try {
             List<Method> methods = ImmutableList.copyOf(Computations.class.getDeclaredMethods());
             for (Method method : methods) {

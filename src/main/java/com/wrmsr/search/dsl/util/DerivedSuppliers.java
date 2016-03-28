@@ -161,31 +161,8 @@ public final class DerivedSuppliers
                     .getField(classFieldDefinitionMap.get(targetParameter.name))
                     .invokeInterface(Supplier.class, "get", Object.class)
                     .checkCast(targetParameter.parameterizedBoxedType);
-            // lol
-            if (targetParameter.type == boolean.class) {
-                body.invokeVirtual(Boolean.class, "booleanValue", boolean.class);
-            }
-            else if (targetParameter.type == byte.class) {
-                body.invokeVirtual(Byte.class, "byteValue", byte.class);
-            }
-            else if (targetParameter.type == short.class) {
-                body.invokeVirtual(Short.class, "shortValue", short.class);
-            }
-            else if (targetParameter.type == int.class) {
-                body.invokeVirtual(Integer.class, "intValue", int.class);
-            }
-            else if (targetParameter.type == long.class) {
-                body.invokeVirtual(Long.class, "longValue", long.class);
-            }
-            else if (targetParameter.type == float.class) {
-                body.invokeVirtual(Float.class, "floatValue", float.class);
-            }
-            else if (targetParameter.type == double.class) {
-                body.invokeVirtual(Double.class, "doubleValue", double.class);
-            }
-            else {
-                checkState(!(targetParameter.type instanceof Class && ((Class) targetParameter.type).isPrimitive()));
-            }
+            Class<?> targetParameterClass = (Class<?>) targetParameter.type;
+            unboxValue(body, targetParameterClass);
         }
         body.invokeStatic(target);
         if (targetReturnClass.isPrimitive()) {
@@ -193,6 +170,34 @@ public final class DerivedSuppliers
                     .invokeConstructor(boxedTargetReturnClass, targetReturnClass);
         }
         body.retObject();
+    }
+
+    private static void unboxValue(BytecodeBlock body, Class<?> clazz)
+    {
+        if (clazz == boolean.class) {
+            body.invokeVirtual(Boolean.class, "booleanValue", boolean.class);
+        }
+        else if (clazz == byte.class) {
+            body.invokeVirtual(Byte.class, "byteValue", byte.class);
+        }
+        else if (clazz == short.class) {
+            body.invokeVirtual(Short.class, "shortValue", short.class);
+        }
+        else if (clazz == int.class) {
+            body.invokeVirtual(Integer.class, "intValue", int.class);
+        }
+        else if (clazz == long.class) {
+            body.invokeVirtual(Long.class, "longValue", long.class);
+        }
+        else if (clazz == float.class) {
+            body.invokeVirtual(Float.class, "floatValue", float.class);
+        }
+        else if (clazz == double.class) {
+            body.invokeVirtual(Double.class, "doubleValue", double.class);
+        }
+        else {
+            checkState(!clazz.isPrimitive());
+        }
     }
 
     private static void cloneParameterAnnotation(MethodDefinition methodDefinition, int parameterIndex, Annotation annotation)
